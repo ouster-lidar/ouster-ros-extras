@@ -6,7 +6,7 @@
 # All rights reserved.
 
 """
-A module that shows how to subscribe to ouster point cloud and utililze pcl filters.
+A module that shows how to subscribe to ouster point cloud and save as OSF file.
 Author: Ussama Naal
 """
 
