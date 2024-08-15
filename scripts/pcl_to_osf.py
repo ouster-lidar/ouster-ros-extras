@@ -63,33 +63,37 @@ class PointCloudSubscriber(Node):
             return
 
         ts = msg.header.stamp
-        scan_ts = int(ts.sec * 1e9 + ts.nanosec)
-        scan = LidarScan(128, 1024)
+        scan_ts = np.uint64(ts.sec * 1e9 + ts.nanosec)
+        W, H = msg.width, msg.height
+        scan = LidarScan(H, W)
 
         data = pc2.read_points(msg, field_names=["range"])
         points = np.array(list(data), dtype=np.uint32)
-        points = points.reshape((128, 1024))
+        points = points.reshape((H, W))
         points = destagger(self._sensor_info, points, inverse=True)
         scan.field(ChanField.RANGE)[:] = points
 
         data = pc2.read_points(msg, field_names=["reflectivity"])
         points = np.array(list(data), dtype=np.uint16)
-        points = points.reshape((128, 1024))
+        points = points.reshape((H, W))
         points = destagger(self._sensor_info, points, inverse=True)
         scan.field(ChanField.REFLECTIVITY)[:] = points
 
         data = pc2.read_points(msg, field_names=["ambient"])
         points = np.array(list(data), dtype=np.uint16)
-        points = points.reshape((128, 1024))
+        points = points.reshape((H, W))
         points = destagger(self._sensor_info, points, inverse=True)
         scan.field(ChanField.NEAR_IR)[:] = points
 
         data = pc2.read_points(msg, field_names=["intensity"])
         points = np.array(list(data), dtype=np.float32)
-        points = points.reshape((128, 1024))
+        points = points.reshape((H, W))
         points = points.astype(np.uint32)
         points = destagger(self._sensor_info, points, inverse=True)
         scan.field(ChanField.SIGNAL)[:] = points
+
+        for i in range(len(scan.packet_timestamp)):
+            scan.packet_timestamp[i] = scan_ts + i * (1e9/100/16)
 
         self._writer.save(0, scan, scan_ts)
 
