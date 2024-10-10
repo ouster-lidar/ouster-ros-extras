@@ -22,7 +22,7 @@ from ouster.sdk.client import SensorInfo, ChanField, FieldType, FieldClass, Lida
 
 class PointCloudSubscriber(Node):
 
-    def __init__(self):
+    def __init__(self, output_path):
         super().__init__('point_cloud_subscriber')
 
         qos_profile = QoSProfile(
@@ -38,13 +38,13 @@ class PointCloudSubscriber(Node):
             qos_profile=qos_profile)
         
         self._scan_ctr = 0
+        self._output_path = output_path
 
     def metadata_callback(self, metadata):
         import ouster.sdk.osf as osf
-        out_path = "sybmotic.osf"
         self._sensor_info = SensorInfo(s=metadata.data)
         metadata = SensorInfo(metadata.data)
-        self._writer = osf.Writer(out_path, self._sensor_info)
+        self._writer = osf.Writer(self._output_path, self._sensor_info)
 
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
@@ -105,7 +105,7 @@ class PointCloudSubscriber(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    point_cloud_subscriber = PointCloudSubscriber()
+    point_cloud_subscriber = PointCloudSubscriber("output.osf")
     rclpy.spin(point_cloud_subscriber)
     point_cloud_subscriber.destroy_node()
     rclpy.shutdown()
